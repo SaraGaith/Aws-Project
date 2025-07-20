@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -6,331 +5,1654 @@
     <title>KPI Weekly Tracker</title>
     <script src="https://unpkg.com/amazon-cognito-identity-js@6.1.2/dist/amazon-cognito-identity.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
     <style>
-        body {
-            min-height: 100vh;
+        * {
             margin: 0;
-            font-family: 'Segoe UI', Arial, sans-serif;
-            background: url('https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=1350&q=80') center/cover no-repeat;
-            background-attachment: fixed;
+            padding: 0;
+            box-sizing: border-box;
         }
-        .layout {
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(rgba(0,0,0,0.3), rgba(0,0,0,0.5)), 
+                        url('https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&w=2000&q=80') center/cover no-repeat fixed;
             min-height: 100vh;
+            color: #333;
+        }
+
+        /* Navigation */
+        .navbar {
+            background: rgba(15, 23, 42, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 1000;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+        }
+
+        .navbar .logo {
+            color: #06b6d4;
+            font-size: 1.5rem;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .navbar .nav-links {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+        }
+
+        .navbar .nav-links a {
+            color: white;
+            text-decoration: none;
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.9rem;
+        }
+
+        .navbar .nav-links a:hover {
+            background: rgba(6, 182, 212, 0.2);
+            color: #06b6d4;
+        }
+
+        .navbar .nav-links a.active {
+            background: #06b6d4;
+            color: white;
+        }
+
+        .navbar .user-info {
+            color: #94a3b8;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .logout-btn {
+            background: #ef4444;
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .logout-btn:hover {
+            background: #dc2626;
+            transform: translateY(-2px);
+        }
+
+        /* Login Page */
+        .login-container {
             display: flex;
             justify-content: center;
             align-items: center;
+            min-height: 100vh;
+            padding: 2rem;
         }
-        .main-container {
-            width: 980px;
-            max-width: 99vw;
-            background: rgba(255,255,255,0.97);
-            border-radius: 26px;
-            box-shadow: 0 8px 36px #c4e1fd8a;
-            display: flex;
-            overflow: hidden;
+
+        .login-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(15px);
+            border-radius: 20px;
+            padding: 3rem;
+            box-shadow: 0 25px 50px rgba(0,0,0,0.3);
+            width: 100%;
+            max-width: 450px;
+            border: 1px solid rgba(255,255,255,0.3);
         }
-        .form-panel, .history-panel {
-            flex: 1;
-            min-width: 320px;
-            padding: 34px 32px;
-        }
-        .form-panel {
-            border-right: 1.5px solid #e8ecee;
-            background: rgba(255,255,255,0.93);
-        }
-        .history-panel {
-            background: rgba(240,249,255,0.93);
-            padding-right: 30px;
-        }
-        h2 { color: #20986d; font-size:2.1rem; margin-bottom:4px;}
-        .motiv {font-size:1.2em; color:#2d5646; margin-bottom:24px; font-weight:500;}
-        .user-row { display: flex; align-items: center; gap: 10px; font-size: 1.04rem; margin-bottom: 10px;}
-        .fa-user { color: #299864; }
-        .section-title { margin: 18px 0 7px; font-size: 1.09rem; color: #26895b; font-weight: bold;}
-        input, button { width: 100%; margin: 8px 0; padding: 12px; border: 1px solid #b2dbba; border-radius: 8px;}
-        input:focus { outline: none; border-color: #90be9d;}
-        button { background: linear-gradient(90deg, #32ba7c 80%, #43c59e 100%); color: #fff; border: none; cursor: pointer; font-size: 1.09em; font-weight: bold; margin-top:2px;}
-        button:hover { background: linear-gradient(90deg, #2a9c63 90%, #176c41 100%);}
-        button:disabled { background: #ccc;}
-        .logout { color: #fff; background: #f26d6d; border: none; margin-top: 18px; font-size: 1rem; cursor: pointer; border-radius: 8px; }
-        .logout:hover { background: #d43a3a;}
-        .msg { margin: 11px 0 7px; text-align: center; font-size: 1rem;}
-        .success { color: #199f52; }
-        .error { color: #cc2424;}
-        .history-table { width: 100%; border-collapse: collapse; margin-top: 0px;}
-        .history-table th, .history-table td { padding: 10px 7px; border-bottom: 1px solid #e8ecf3; text-align: center;}
-        .history-table th { background: #e0f8ee; color: #1d986c;}
-        .history-table tr:last-child td { border-bottom: none;}
-        .tag { display: inline-block; padding: 3px 10px; border-radius: 10px; font-size: 0.95em;}
-        .tag.achieved { background: #e7fae7; color: #0a9e57;}
-        .tag.below { background: #fff1f0; color: #ce2633;}
-        .history-title {font-size: 1.13em; color: #299864; margin: 0 0 11px 0; text-align:center;}
-        .history-panel .fa-trophy { color: #cdb122; margin-right:3px;}
-        @media (max-width: 900px) {
-            .main-container { flex-direction: column; width:97vw; }
-            .form-panel, .history-panel { padding: 18px 7vw; border-right:none; min-width:unset;}
-        }
-        .login-container {
-            width: 360px;
-            background: rgba(255,255,255,0.98);
-            border-radius: 18px;
-            box-shadow: 0 8px 40px #c4e1fd93;
-            padding: 40px 35px 35px 35px;
-            margin: 50px auto;
+
+        .login-header {
             text-align: center;
-            display: flex;
-            flex-direction: column;
+            margin-bottom: 2rem;
         }
-        .login-title { color: #21986a; font-size: 1.65em; margin-bottom: 14px; }
-        .login-container input { border: 1.5px solid #b2dbba;}
-        .login-container button { margin-top: 18px;}
+
+        .login-header h1 {
+            color: #1e293b;
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+
+        .login-header p {
+            color: #64748b;
+            font-size: 1rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: #374151;
+            font-weight: 500;
+        }
+
+        .form-group input, .form-group select {
+            width: 100%;
+            padding: 1rem;
+            border: 2px solid #e5e7eb;
+            border-radius: 12px;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            background: rgba(255,255,255,0.9);
+        }
+
+        .form-group input:focus, .form-group select:focus {
+            outline: none;
+            border-color: #06b6d4;
+            box-shadow: 0 0 0 3px rgba(6, 182, 212, 0.1);
+        }
+
+        .login-btn {
+            width: 100%;
+            background: linear-gradient(135deg, #06b6d4, #0891b2);
+            color: white;
+            border: none;
+            padding: 1rem 2rem;
+            border-radius: 12px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+
+        .login-btn:hover {
+            background: linear-gradient(135deg, #0891b2, #0e7490);
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(6, 182, 212, 0.3);
+        }
+
+        /* Main Content */
+        .main-content {
+            margin-top: 80px;
+            padding: 2rem;
+            min-height: calc(100vh - 80px);
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .page-header {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(15px);
+            border-radius: 20px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            border: 1px solid rgba(255,255,255,0.3);
+            text-align: center;
+        }
+
+        .page-header h1 {
+            color: #1e293b;
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+            background: linear-gradient(135deg, #06b6d4, #0891b2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .page-header p {
+            color: #64748b;
+            font-size: 1.2rem;
+        }
+
+        /* Cards */
+        .card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(15px);
+            border-radius: 20px;
+            padding: 2rem;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            border: 1px solid rgba(255,255,255,0.3);
+            margin-bottom: 2rem;
+        }
+
+        .card h3 {
+            color: #1e293b;
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .card .icon {
+            color: #06b6d4;
+        }
+
+        /* Stats Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: rgba(255,255,255,0.9);
+            padding: 1.5rem;
+            border-radius: 15px;
+            text-align: center;
+            border: 1px solid rgba(6, 182, 212, 0.2);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 30px rgba(0,0,0,0.1);
+        }
+
+        .stat-card .icon {
+            font-size: 2rem;
+            color: #06b6d4;
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-card .value {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #1e293b;
+            margin-bottom: 0.25rem;
+        }
+
+        .stat-card .label {
+            color: #64748b;
+            font-size: 0.9rem;
+        }
+
+        /* Forms */
+        .forms-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 2rem;
+        }
+
+        .submit-btn {
+            width: 100%;
+            background: linear-gradient(135deg, #10b981, #059669);
+            color: white;
+            border: none;
+            padding: 1rem 2rem;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            margin-top: 1rem;
+        }
+
+        .submit-btn:hover {
+            background: linear-gradient(135deg, #059669, #047857);
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(16, 185, 129, 0.3);
+        }
+
+        /* Charts */
+        .chart-container {
+            background: white;
+            border-radius: 15px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        .chart-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: #1e293b;
+            margin-bottom: 1rem;
+            text-align: center;
+        }
+
+        /* Analytics Grid */
+        .analytics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 2rem;
+        }
+
+        /* AI Coach Sections */
+        .coach-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .coach-section {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(15px);
+            border-radius: 20px;
+            padding: 2rem;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            border: 1px solid rgba(139, 92, 246, 0.2);
+            border-left: 4px solid #8b5cf6;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .coach-section:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 25px 50px rgba(0,0,0,0.15);
+        }
+
+        .coach-section h4 {
+            color: #8b5cf6;
+            font-size: 1.4rem;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            font-weight: 600;
+        }
+
+        .insight-card {
+            background: rgba(248,250,252,0.8);
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+            border-left: 4px solid #8b5cf6;
+            transition: all 0.3s ease;
+        }
+
+        .insight-card:hover {
+            background: rgba(248,250,252,0.9);
+            transform: translateX(5px);
+        }
+
+        .insight-card h5 {
+            color: #1e293b;
+            margin-bottom: 0.75rem;
+            font-size: 1.1rem;
+            font-weight: 600;
+        }
+
+        .insight-card p {
+            color: #64748b;
+            line-height: 1.6;
+            font-size: 0.95rem;
+        }
+
+        .recommendation-list {
+            list-style: none;
+            padding: 0;
+        }
+
+        .recommendation-list li {
+            background: rgba(248,250,252,0.8);
+            border-radius: 8px;
+            padding: 1rem;
+            margin-bottom: 0.5rem;
+            border-left: 3px solid #10b981;
+            display: flex;
+            align-items: flex-start;
+            gap: 0.75rem;
+            transition: all 0.3s ease;
+        }
+
+        .recommendation-list li:hover {
+            background: rgba(248,250,252,0.9);
+            transform: translateX(5px);
+        }
+
+        .recommendation-list li i {
+            color: #10b981;
+            margin-top: 0.2rem;
+            font-size: 1.1rem;
+        }
+
+        /* Table */
+        .table-container {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(15px);
+            border-radius: 20px;
+            padding: 2rem;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            border: 1px solid rgba(255,255,255,0.3);
+            overflow-x: auto;
+        }
+
+        .history-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 2rem;
+        }
+
+        .history-table th {
+            background: linear-gradient(135deg, #06b6d4, #0891b2);
+            color: white;
+            padding: 1rem;
+            text-align: left;
+            font-weight: 600;
+            border-bottom: none;
+        }
+
+        .history-table th:first-child {
+            border-radius: 12px 0 0 0;
+        }
+
+        .history-table th:last-child {
+            border-radius: 0 12px 0 0;
+        }
+
+        .history-table td {
+            padding: 1rem;
+            border-bottom: 1px solid #e5e7eb;
+            background: rgba(255,255,255,0.9);
+        }
+
+        .history-table tr:last-child td:first-child {
+            border-radius: 0 0 0 12px;
+        }
+
+        .history-table tr:last-child td:last-child {
+            border-radius: 0 0 12px 0;
+        }
+
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+
+        .status-badge.achieved {
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        .status-badge.below {
+            background: #fef2f2;
+            color: #dc2626;
+        }
+
+        /* Email Settings */
+        .email-settings {
+            background: rgba(255,255,255,0.9);
+            border-radius: 15px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .email-type {
+            background: rgba(248,250,252,0.8);
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+            border: 2px solid transparent;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .email-type:hover {
+            border-color: #06b6d4;
+            transform: translateY(-2px);
+        }
+
+        .email-type.selected {
+            border-color: #06b6d4;
+            background: rgba(6, 182, 212, 0.1);
+        }
+
+        .email-type h5 {
+            color: #1e293b;
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .email-type p {
+            color: #64748b;
+            font-size: 0.9rem;
+        }
+
+        /* Messages */
+        .message {
+            padding: 1rem;
+            border-radius: 12px;
+            margin-top: 1rem;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .message.success {
+            background: #dcfce7;
+            color: #166534;
+            border: 1px solid #bbf7d0;
+        }
+
+        .message.error {
+            background: #fef2f2;
+            color: #dc2626;
+            border: 1px solid #fecaca;
+        }
+
+        /* Loading */
+        .loading {
+            text-align: center;
+            padding: 3rem;
+            color: #64748b;
+            font-size: 1.1rem;
+        }
+
+        .loading i {
+            animation: spin 1s linear infinite;
+            margin-right: 0.5rem;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .navbar {
+                padding: 1rem;
+                flex-direction: column;
+                gap: 1rem;
+            }
+
+            .navbar .nav-links {
+                gap: 0.5rem;
+                flex-wrap: wrap;
+                justify-content: center;
+            }
+
+            .navbar .nav-links a {
+                font-size: 0.8rem;
+                padding: 0.4rem 0.8rem;
+            }
+
+            .main-content {
+                padding: 1rem;
+                margin-top: 140px;
+            }
+
+            .forms-container,
+            .analytics-grid,
+            .coach-container {
+                grid-template-columns: 1fr;
+            }
+
+            .stats-grid {
+                grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            }
+
+            .login-card {
+                padding: 2rem;
+            }
+
+            .page-header h1 {
+                font-size: 2rem;
+            }
+
+            .history-table {
+                font-size: 0.9rem;
+            }
+
+            .history-table th,
+            .history-table td {
+                padding: 0.5rem;
+            }
+        }
+
+        .hidden {
+            display: none !important;
+        }
     </style>
 </head>
 <body>
     <!-- Login Page -->
-    <div class="layout" id="loginPage">
-        <form class="login-container" onsubmit="event.preventDefault(); login();">
-            <div class="login-title"><i class="fa fa-chart-line"></i> KPI Weekly Tracker</div>
-            <input type="text" id="loginEmail" placeholder="Email" autocomplete="username" required>
-            <input type="password" id="loginPass" placeholder="Password" autocomplete="current-password" required>
-            <button type="submit"><i class="fa fa-sign-in-alt"></i> Sign In</button>
-            <div class="msg" id="loginMsg"></div>
-        </form>
-    </div>
-    <!-- Main App UI -->
-    <div class="layout" id="mainPage" style="display:none;">
-        <div class="main-container" id="mainDiv">
-            <!-- Panel 1: Goals & Progress -->
-            <div class="form-panel">
-                <div class="user-row">
-                    <i class="fa fa-user"></i>
-                    <span id="userEmail"></span>
+    <div id="loginPage">
+        <div class="login-container">
+            <div class="login-card">
+                <div class="login-header">
+                    <h1><i class="fas fa-chart-line"></i> KPI Tracker</h1>
+                    <p>Track your weekly goals and achievements</p>
                 </div>
-                <h2>🎯 KPI Weekly Tracker</h2>
-                <div class="motiv">Set your weekly goal, track your progress, and be your own champion! 🚀</div>
-                <form onsubmit="event.preventDefault(); sendGoal();">
-                    <div class="section-title"><i class="fa fa-bullseye"></i> Set Weekly Goal</div>
-                    <input type="text" id="weekInput" placeholder="Week (e.g., 2025-W28)" required>
-                    <input type="text" id="goalDescInput" placeholder="Goal description (e.g., Read 10 pages)" required>
-                    <input type="number" id="goalInput" placeholder="Target (number, e.g., 10)" required>
-                    <button type="submit"><i class="fa fa-plus-circle"></i> Submit Goal</button>
-                </form>
-                <form onsubmit="event.preventDefault(); sendActual();">
-                    <div class="section-title"><i class="fa fa-clipboard-check"></i> Actual Achievement</div>
-                    <input type="text" id="weekActual" placeholder="Week (e.g., 2025-W28)" required>
-                    <input type="number" id="actualInput" placeholder="Achieved (number, e.g., 8)" required>
-                    <button type="submit"><i class="fa fa-check-circle"></i> Submit Actual</button>
-                </form>
-                <div class="msg" id="mainMsg"></div>
-                <button class="logout" onclick="logout()"><i class="fa fa-sign-out-alt"></i> Logout</button>
-            </div>
-            <!-- Panel 2: History -->
-            <div class="history-panel">
-                <div class="history-title"><i class="fa fa-trophy"></i> Your KPI History</div>
-                <div style="text-align:center; color:#aaa;" id="historyLoading">Loading history...</div>
-                <table class="history-table hidden" id="historyTable">
-                    <thead>
-                        <tr>
-                            <th>Week</th>
-                            <th>Goal Description</th>
-                            <th>Goal</th>
-                            <th>Actual</th>
-                            <th>Status</th>
-                        </tr>
-                    </thead>
-                    <tbody id="historyTbody"></tbody>
-                </table>
-                <!-- Send Notification Button -->
-                <div style="text-align:center; margin-top: 16px;">
-                    <button id="sendSummaryBtn" onclick="sendSummary()">
-                        <i class="fa fa-envelope"></i> Send Summary Email
+                <form onsubmit="event.preventDefault(); login();">
+                    <div class="form-group">
+                        <label for="loginEmail">Email Address</label>
+                        <input type="email" id="loginEmail" placeholder="Enter your email" autocomplete="username" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="loginPass">Password</label>
+                        <input type="password" id="loginPass" placeholder="Enter your password" autocomplete="current-password" required>
+                    </div>
+                    <button type="submit" class="login-btn">
+                        <i class="fas fa-sign-in-alt"></i> Sign In
                     </button>
+                    <div id="loginMsg"></div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Navigation -->
+    <nav class="navbar hidden" id="navbar">
+        <div class="logo">
+            <i class="fas fa-chart-line"></i>
+            KPI Tracker
+        </div>
+        <div class="nav-links">
+            <a href="#" onclick="showDashboard()" id="dashboardLink" class="active">
+                <i class="fas fa-tachometer-alt"></i> Dashboard
+            </a>
+            <a href="#" onclick="showHistory()" id="historyLink">
+                <i class="fas fa-history"></i> History
+            </a>
+            <a href="#" onclick="showAnalytics()" id="analyticsLink">
+                <i class="fas fa-chart-bar"></i> Analytics
+            </a>
+            <a href="#" onclick="showAICoach()" id="aiCoachLink">
+                <i class="fas fa-brain"></i> AI Coach
+            </a>
+            <a href="#" onclick="showEmailCenter()" id="emailLink">
+                <i class="fas fa-envelope"></i> Email Center
+            </a>
+        </div>
+        <div class="user-info">
+            <span id="userEmail"></span>
+            <button class="logout-btn" onclick="logout()">
+                <i class="fas fa-sign-out-alt"></i> Logout
+            </button>
+        </div>
+    </nav>
+
+    <!-- Dashboard Page -->
+    <div class="main-content hidden" id="dashboardPage">
+        <div class="container">
+            <div class="page-header">
+                <h1>🎯 Weekly KPI Dashboard</h1>
+                <p>Set ambitious goals, track your progress, and celebrate your achievements!</p>
+            </div>
+
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="icon"><i class="fas fa-target"></i></div>
+                    <div class="value" id="totalGoals">0</div>
+                    <div class="label">Total Goals</div>
+                </div>
+                <div class="stat-card">
+                    <div class="icon"><i class="fas fa-trophy"></i></div>
+                    <div class="value" id="achievedGoals">0</div>
+                    <div class="label">Achieved</div>
+                </div>
+                <div class="stat-card">
+                    <div class="icon"><i class="fas fa-percentage"></i></div>
+                    <div class="value" id="successRate">0%</div>
+                    <div class="label">Success Rate</div>
+                </div>
+                <div class="stat-card">
+                    <div class="icon"><i class="fas fa-trend-up"></i></div>
+                    <div class="value" id="weeklyTrend">-</div>
+                    <div class="label">Weekly Trend</div>
+                </div>
+            </div>
+
+            <div class="forms-container">
+                <!-- Set Goal Form -->
+                <div class="card">
+                    <h3><i class="fas fa-bullseye icon"></i> Set Weekly Goal</h3>
+                    <form onsubmit="event.preventDefault(); sendGoal();">
+                        <div class="form-group">
+                            <label for="weekInput">Week</label>
+                            <input type="text" id="weekInput" placeholder="e.g., 2025-W28" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="goalDescInput">Goal Description</label>
+                            <input type="text" id="goalDescInput" placeholder="e.g., Read 10 pages daily" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="goalInput">Target Number</label>
+                            <input type="number" id="goalInput" placeholder="e.g., 10" required>
+                        </div>
+                        <button type="submit" class="submit-btn">
+                            <i class="fas fa-plus-circle"></i> Set Goal
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Record Achievement Form -->
+                <div class="card">
+                    <h3><i class="fas fa-clipboard-check icon"></i> Record Achievement</h3>
+                    <form onsubmit="event.preventDefault(); sendActual();">
+                        <div class="form-group">
+                            <label for="weekActual">Week</label>
+                            <input type="text" id="weekActual" placeholder="e.g., 2025-W28" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="actualInput">Achieved Number</label>
+                            <input type="number" id="actualInput" placeholder="e.g., 8" required>
+                        </div>
+                        <button type="submit" class="submit-btn">
+                            <i class="fas fa-check-circle"></i> Record Achievement
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <div id="mainMsg"></div>
+        </div>
+    </div>
+
+    <!-- History Page -->
+    <div class="main-content hidden" id="historyPage">
+        <div class="container">
+            <div class="page-header">
+                <h1><i class="fas fa-history"></i> Your KPI History</h1>
+                <p>Track your progress and celebrate your achievements over time</p>
+            </div>
+
+            <div class="table-container">
+                <div class="loading" id="historyLoading">
+                    <i class="fas fa-spinner"></i> Loading your KPI history...
+                </div>
+                
+                <div class="hidden" id="historyContent">
+                    <table class="history-table" id="historyTable">
+                        <thead>
+                            <tr>
+                                <th><i class="fas fa-calendar"></i> Week</th>
+                                <th><i class="fas fa-file-alt"></i> Goal Description</th>
+                                <th><i class="fas fa-target"></i> Target</th>
+                                <th><i class="fas fa-chart-bar"></i> Achieved</th>
+                                <th><i class="fas fa-medal"></i> Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="historyTbody"></tbody>
+                    </table>
+                </div>
+
+                <div class="loading hidden" id="noHistory">
+                    <i class="fas fa-chart-line"></i> No KPI history found yet. Start by setting your first goal!
                 </div>
             </div>
         </div>
     </div>
+
+    <!-- Analytics Page -->
+    <div class="main-content hidden" id="analyticsPage">
+        <div class="container">
+            <div class="page-header">
+                <h1><i class="fas fa-chart-bar"></i> Smart Analytics</h1>
+                <p>Deep insights into your performance patterns and trends</p>
+            </div>
+
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="icon"><i class="fas fa-calendar-month"></i></div>
+                    <div class="value" id="monthlySuccess">0%</div>
+                    <div class="label">Monthly Success Rate</div>
+                </div>
+                <div class="stat-card">
+                    <div class="icon"><i class="fas fa-star"></i></div>
+                    <div class="value" id="bestMonth">-</div>
+                    <div class="label">Best Month</div>
+                </div>
+                <div class="stat-card">
+                    <div class="icon"><i class="fas fa-bullseye"></i></div>
+                    <div class="value" id="avgTarget">0</div>
+                    <div class="label">Avg Target</div>
+                </div>
+            </div>
+
+            <div class="analytics-grid">
+                <div class="chart-container">
+                    <div class="chart-title">Weekly Performance Trend</div>
+                    <canvas id="performanceChart" width="400" height="200"></canvas>
+                </div>
+
+                <div class="chart-container">
+                    <div class="chart-title">Goal Categories Distribution</div>
+                    <canvas id="categoriesChart" width="400" height="200"></canvas>
+                </div>
+
+                <div class="chart-container">
+                    <div class="chart-title">Success Rate Over Time</div>
+                    <canvas id="successChart" width="400" height="200"></canvas>
+                </div>
+
+                <div class="chart-container">
+                    <div class="chart-title">Achievement vs Target</div>
+                    <canvas id="comparisonChart" width="400" height="200"></canvas>
+                </div>
+            </div>
+
+            <div class="card">
+                <h3><i class="fas fa-lightbulb icon"></i> Performance Insights</h3>
+                <div id="performanceInsights">
+                    <div class="loading">
+                        <i class="fas fa-spinner"></i> Analyzing your performance data...
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- AI Coach Page -->
+    <div class="main-content hidden" id="aiCoachPage">
+        <div class="container">
+            <div class="page-header">
+                <h1><i class="fas fa-brain"></i> AI Personal Coach</h1>
+                <p>Your intelligent companion for achieving your goals and building better habits</p>
+            </div>
+
+            <div class="coach-container">
+                <div class="coach-section">
+                    <h4><i class="fas fa-user-md"></i> Psychological Profile Analysis</h4>
+                    <div id="psychologicalAnalysis">
+                        <div class="loading">
+                            <i class="fas fa-spinner"></i> Analyzing your goal-setting patterns...
+                        </div>
+                    </div>
+                </div>
+
+                <div class="coach-section">
+                    <h4><i class="fas fa-lightbulb"></i> Personalized Recommendations</h4>
+                    <div id="personalizedRecommendations">
+                        <div class="loading">
+                            <i class="fas fa-spinner"></i> Generating personalized strategies...
+                        </div>
+                    </div>
+                </div>
+
+                <div class="coach-section">
+                    <h4><i class="fas fa-route"></i> Action Plan & Roadmap</h4>
+                    <div id="actionPlan">
+                        <div class="loading">
+                            <i class="fas fa-spinner"></i> Creating your success roadmap...
+                        </div>
+                    </div>
+                </div>
+
+                <div class="coach-section">
+                    <h4><i class="fas fa-rocket"></i> Motivation & Vision Alignment</h4>
+                    <div id="motivationAlignment">
+                        <div class="loading">
+                            <i class="fas fa-spinner"></i> Connecting your goals to your bigger vision...
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Email Center Page -->
+    <div class="main-content hidden" id="emailPage">
+        <div class="container">
+            <div class="page-header">
+                <h1><i class="fas fa-envelope"></i> Email Notification Center</h1>
+                <p>Configure and send intelligent email reports and notifications</p>
+            </div>
+
+            <div class="card">
+                <h3><i class="fas fa-cog icon"></i> Email Report</h3>
+                <div class="email-settings">
+                    <div class="insight-card">
+                        <h5><i class="fas fa-envelope"></i> Send Weekly Report</h5>
+                        <p>Get your weekly KPI summary report sent directly to your email: <strong id="userEmailDisplay"></strong></p>
+                    </div>
+                </div>
+
+                <button class="submit-btn" id="sendEmailBtn" onclick="sendAdvancedEmail()">
+                    <i class="fas fa-paper-plane"></i> Send My Weekly Report Now
+                </button>
+            </div>
+
+            <div class="card">
+                <h3><i class="fas fa-history icon"></i> Email History</h3>
+                <div id="emailHistory">
+                    <div class="loading">
+                        <i class="fas fa-spinner"></i> Loading email history...
+                    </div>
+                </div>
+            </div>
+
+            <div id="emailMsg"></div>
+        </div>
+    </div>
+
     <script>
-    // Cognito Config
-    const poolData = {
-        UserPoolId: 'us-east-1_jvfwwt0oz',
-        ClientId: '1iab3oektj5jekfbp64q6l0jfq'
-    };
-    const userPool = new AmazonCognitoIdentity.CognitoUserPool(poolData);
+        // Global variables
+        const poolData = {
+            UserPoolId: 'us-east-1_jvfwwt0oz',
+            ClientId: '1iab3oektj5jekfbp64q6l0jfq'
+        };
+        const userPool = new AmazonCognitoIdentity.CognitoUserPool(poolData);
 
-    // API Endpoints
-    const API_GOAL_URL        = "https://aqs7ioh9g6.execute-api.us-east-1.amazonaws.com/dev/goal";
-    const API_ACTUAL_URL      = "https://aqs7ioh9g6.execute-api.us-east-1.amazonaws.com/dev/actual";
-    const API_HISTORY_URL     = "https://aqs7ioh9g6.execute-api.us-east-1.amazonaws.com/dev/get_all_kpi";
-    const API_CHECKNOTIFY_URL = "https://aqs7ioh9g6.execute-api.us-east-1.amazonaws.com/dev/checkandnotify";
+        const API_GOAL_URL = "https://aqs7ioh9g6.execute-api.us-east-1.amazonaws.com/dev/goal";
+        const API_ACTUAL_URL = "https://aqs7ioh9g6.execute-api.us-east-1.amazonaws.com/dev/actual";
+        const API_HISTORY_URL = "https://aqs7ioh9g6.execute-api.us-east-1.amazonaws.com/dev/get_all_kpi";
+        const API_CHECKNOTIFY_URL = "https://aqs7ioh9g6.execute-api.us-east-1.amazonaws.com/dev/checkandnotify";
 
-    if (sessionStorage.getItem('kpi_token')) showMain();
+        let currentHistoryData = [];
 
-    function login() {
-        document.getElementById("loginMsg").innerText = "";
-        const email = document.getElementById("loginEmail").value.trim();
-        const pass  = document.getElementById("loginPass").value;
-        if (!email || !pass) {
-            document.getElementById("loginMsg").innerText = "Please enter your email and password.";
-            return;
+        // Initialize
+        if (sessionStorage.getItem('kpi_token')) {
+            showMain();
         }
-        const authDetails = new AmazonCognitoIdentity.AuthenticationDetails({ Username: email, Password: pass });
-        const cognitoUser = new AmazonCognitoIdentity.CognitoUser({ Username: email, Pool: userPool });
-        cognitoUser.authenticateUser(authDetails, {
-            onSuccess: res => {
-                sessionStorage.setItem('kpi_token', res.getIdToken().getJwtToken());
-                sessionStorage.setItem('kpi_email', email);
-                showMain();
-            },
-            onFailure: err => {
-                document.getElementById("loginMsg").innerText = "Login failed: " + (err.message||err);
+
+        // Authentication Functions
+        function login() {
+            const msgEl = document.getElementById("loginMsg");
+            msgEl.innerHTML = "";
+
+            const email = document.getElementById("loginEmail").value.trim();
+            const pass = document.getElementById("loginPass").value;
+
+            if (!email || !pass) {
+                showMessage(msgEl, "Please enter your email and password.", "error");
+                return;
             }
-        });
-    }
 
-    function showMain() {
-        document.getElementById("loginPage").style.display = "none";
-        document.getElementById("mainPage" ).style.display = "flex";
-        document.getElementById("userEmail").innerText = sessionStorage.getItem('kpi_email');
-        fetchHistory();
-    }
-
-    function logout() {
-        sessionStorage.clear();
-        document.getElementById("mainPage" ).style.display = "none";
-        document.getElementById("loginPage").style.display = "flex";
-    }
-
-    function sendGoal() {
-        const week     = document.getElementById("weekInput").value.trim();
-        const goalDesc = document.getElementById("goalDescInput").value.trim();
-        const goal     = document.getElementById("goalInput").value;
-        const email    = sessionStorage.getItem('kpi_email');
-        if (!week || !goalDesc || !goal) {
-            document.getElementById("mainMsg").innerText = "Please enter week, description and goal.";
-            document.getElementById("mainMsg").className = "msg error";
-            return;
-        }
-        document.getElementById("mainMsg").innerText = "Saving...";
-        fetch(API_GOAL_URL, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ userId: email, week, goalDescription: goalDesc, goal: Number(goal) })
-        })
-        .then(r => r.json())
-        .then(r => {
-            document.getElementById("mainMsg").innerText = (r.message||r.error||"Goal submitted!");
-            document.getElementById("mainMsg").className = r.message ? "msg success" : "msg error";
-            fetchHistory();
-        });
-    }
-
-    function sendActual() {
-        const week  = document.getElementById("weekActual").value.trim();
-        const actual= document.getElementById("actualInput").value;
-        const email = sessionStorage.getItem('kpi_email');
-        if (!week || !actual) {
-            document.getElementById("mainMsg").innerText = "Please enter week and your achieved value.";
-            document.getElementById("mainMsg").className = "msg error";
-            return;
-        }
-        document.getElementById("mainMsg").innerText = "Saving...";
-        fetch(API_ACTUAL_URL, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ userId: email, week, targetPercent: Number(actual) })
-        })
-        .then(r => r.json())
-        .then(res => {
-            let msg = res.message || "";
-            if (res.result === "Achieved")       msg = "Great job! 🎉";
-            else if (res.result === "Below Goal") msg = "Keep pushing! 💪";
-            document.getElementById("mainMsg").innerText = msg;
-            document.getElementById("mainMsg").className = res.result==="Achieved" ? "msg success" : "msg error";
-            fetchHistory();
-        });
-    }
-
-    function fetchHistory() {
-        const email = sessionStorage.getItem('kpi_email');
-        document.getElementById("historyLoading").style.display = 'block';
-        document.getElementById("historyTable").classList.add("hidden");
-        fetch(API_HISTORY_URL, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ userId: email })
-        })
-        .then(r => r.json())
-        .then(apiRes => {
-            let items = [];
-            if (Array.isArray(apiRes)) items = apiRes;
-            else if (Array.isArray(apiRes.body)) items = JSON.parse(apiRes.body);
-            items.sort((a,b)=>{
-                const pa=a.week.match(/^(\d+)-W(\d+)$/)||[]; 
-                const pb=b.week.match(/^(\d+)-W(\d+)$/)||[];
-                const ya=+pa[1], wa=+pa[2], yb=+pb[1], wb=+pb[2];
-                return yb-ya || wb-wa;
+            const authDetails = new AmazonCognitoIdentity.AuthenticationDetails({
+                Username: email,
+                Password: pass
             });
-            const tbody = document.getElementById("historyTbody");
-            if (items.length) {
-                tbody.innerHTML = items.map(item=>`
-                    <tr>
-                      <td>${item.week||""}</td>
-                      <td>${item.goalDescription||""}</td>
-                      <td>${item.goal!=null?item.goal:""}</td>
-                      <td>${item.targetPercent!=null?item.targetPercent:""}</td>
-                      <td>${
-                         item.resultComparison==="Achieved"
-                         ?`<span class="tag achieved"><i class="fa fa-check"></i> Achieved</span>`
-                         : item.resultComparison==="Below Goal"
-                         ?`<span class="tag below"><i class="fa fa-times"></i> Below</span>`
-                         :``
-                      }</td>
-                    </tr>
-                `).join("");
-                document.getElementById("historyLoading").style.display = 'none';
-                document.getElementById("historyTable").classList.remove("hidden");
-            } else {
-                tbody.innerHTML = "";
-                document.getElementById("historyLoading").innerText = "No history found yet.";
-            }
-        })
-        .catch(()=>{
-            document.getElementById("historyLoading").innerText = "Failed to load history!";
-        });
-    }
 
-    function sendSummary() {
-        const email = sessionStorage.getItem('kpi_email');
-        const firstCell = document.querySelector('#historyTbody tr:first-child td');
-        const week = firstCell ? firstCell.innerText : null;
-        if (!email || !week) {
-            alert("No data available to summarize yet.");
-            return;
+            const cognitoUser = new AmazonCognitoIdentity.CognitoUser({
+                Username: email,
+                Pool: userPool
+            });
+
+            cognitoUser.authenticateUser(authDetails, {
+                onSuccess: res => {
+                    sessionStorage.setItem('kpi_token', res.getIdToken().getJwtToken());
+                    sessionStorage.setItem('kpi_email', email);
+                    showMain();
+                },
+                onFailure: err => {
+                    showMessage(msgEl, "Login failed: " + (err.message || err), "error");
+                    console.error('Login error:', err);
+                }
+            });
         }
-        const btn = document.getElementById('sendSummaryBtn');
-        btn.disabled = true; btn.innerText = 'Sending…';
 
-        fetch(API_CHECKNOTIFY_URL, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ userId: email, week })
-        })
-        .then(r => r.json())
-        .then(json => {
-            if (json.message)       alert("✅ " + json.message);
-            else if (json.error)    alert("❌ " + json.error);
-            else                    alert("✅ Notification sent!");
-        })
-        .catch(err => {
-            console.error(err);
-            alert("Failed to send notification: " + (err.message||err));
-        })
-        .finally(() => {
-            btn.disabled = false;
-            btn.innerHTML = '<i class="fa fa-envelope"></i> Send Summary Email';
-        });
-    }
+        function showMain() {
+            document.getElementById("loginPage").style.display = "none";
+            document.getElementById("navbar").classList.remove("hidden");
+            document.getElementById("userEmail").innerText = sessionStorage.getItem('kpi_email');
+            showDashboard();
+        }
+
+        function logout() {
+            sessionStorage.clear();
+            document.getElementById("navbar").classList.add("hidden");
+            hideAllPages();
+            document.getElementById("loginPage").style.display = "flex";
+
+            // Clear forms
+            document.querySelectorAll('input').forEach(input => input.value = '');
+            document.querySelectorAll('.message').forEach(msg => msg.remove());
+        }
+
+        // Navigation Functions
+        function hideAllPages() {
+            document.getElementById("dashboardPage").classList.add("hidden");
+            document.getElementById("historyPage").classList.add("hidden");
+            document.getElementById("analyticsPage").classList.add("hidden");
+            document.getElementById("aiCoachPage").classList.add("hidden");
+            document.getElementById("emailPage").classList.add("hidden");
+        }
+
+        function setActiveNavLink(activeId) {
+            document.querySelectorAll('.nav-links a').forEach(link => {
+                link.classList.remove('active');
+            });
+            document.getElementById(activeId).classList.add('active');
+        }
+
+        function showDashboard() {
+            hideAllPages();
+            setActiveNavLink("dashboardLink");
+            document.getElementById("dashboardPage").classList.remove("hidden");
+            updateStats();
+        }
+
+        function showHistory() {
+            hideAllPages();
+            setActiveNavLink("historyLink");
+            document.getElementById("historyPage").classList.remove("hidden");
+            fetchHistory();
+        }
+
+        function showAnalytics() {
+            hideAllPages();
+            setActiveNavLink("analyticsLink");
+            document.getElementById("analyticsPage").classList.remove("hidden");
+            loadAnalytics();
+        }
+
+        function showAICoach() {
+            hideAllPages();
+            setActiveNavLink("aiCoachLink");
+            document.getElementById("aiCoachPage").classList.remove("hidden");
+            loadAICoach();
+        }
+
+        function showEmailCenter() {
+            hideAllPages();
+            setActiveNavLink("emailLink");
+            document.getElementById("emailPage").classList.remove("hidden");
+
+            const userEmail = sessionStorage.getItem('kpi_email');
+            document.getElementById('userEmailDisplay').textContent = userEmail;
+
+            loadEmailHistory();
+        }
+
+        // Send Goal
+        function sendGoal() {
+            const week = document.getElementById("weekInput").value.trim();
+            const goalDesc = document.getElementById("goalDescInput").value.trim();
+            const goal = document.getElementById("goalInput").value;
+            const email = sessionStorage.getItem('kpi_email');
+
+            if (!week || !goalDesc || !goal) {
+                showMessage(document.getElementById("mainMsg"), "Please fill in all fields.", "error");
+                return;
+            }
+
+            fetch(API_GOAL_URL, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": "Bearer " + sessionStorage.getItem('kpi_token')
+                },
+                body: JSON.stringify({
+                    userId: email,
+                    week,
+                    goalDescription: goalDesc,
+                    goal: Number(goal)
+                })
+            })
+            .then(r => {
+                if (!r.ok) throw new Error(`HTTP ${r.status}: ${r.statusText}`);
+                return r.json();
+            })
+            .then(r => {
+                const message = r.message || r.error || "Goal submitted successfully!";
+                const type = r.message ? "success" : "error";
+                showMessage(document.getElementById("mainMsg"), message, type);
+
+                if (r.message) {
+                    document.getElementById("weekInput").value = "";
+                    document.getElementById("goalDescInput").value = "";
+                    document.getElementById("goalInput").value = "";
+                    updateStats();
+                }
+            })
+            .catch(err => {
+                console.error('Goal submission error:', err);
+                showMessage(document.getElementById("mainMsg"), "Failed to submit goal. Please check your connection and try again.", "error");
+            });
+        }
+
+        // Send Actual
+        function sendActual() {
+            const week = document.getElementById("weekActual").value.trim();
+            const actual = document.getElementById("actualInput").value;
+            const email = sessionStorage.getItem('kpi_email');
+
+            if (!week || !actual) {
+                showMessage(document.getElementById("mainMsg"), "Please fill in all fields.", "error");
+                return;
+            }
+
+            fetch(API_ACTUAL_URL, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": "Bearer " + sessionStorage.getItem('kpi_token')
+                },
+                body: JSON.stringify({
+                    userId: email,
+                    week,
+                    targetPercent: Number(actual)
+                })
+            })
+            .then(r => {
+                if (!r.ok) throw new Error(`HTTP ${r.status}: ${r.statusText}`);
+                return r.json();
+            })
+            .then(res => {
+                let message = res.message || "";
+                let type = "success";
+
+                if (res.result === "Achieved") {
+                    message = "🎉 Congratulations! Goal achieved!";
+                } else if (res.result === "Below Goal") {
+                    message = "💪 Keep pushing! You're making progress!";
+                    type = "error";
+                }
+
+                showMessage(document.getElementById("mainMsg"), message, type);
+
+                if (res.result) {
+                    document.getElementById("weekActual").value = "";
+                    document.getElementById("actualInput").value = "";
+                    updateStats();
+                }
+            })
+            .catch(err => {
+                console.error('Achievement submission error:', err);
+                showMessage(document.getElementById("mainMsg"), "Failed to record achievement. Please check your connection and try again.", "error");
+            });
+        }
+
+        // Fetch History
+        function fetchHistory() {
+            const email = sessionStorage.getItem('kpi_email');
+
+            document.getElementById("historyLoading").classList.remove("hidden");
+            document.getElementById("historyContent").classList.add("hidden");
+            document.getElementById("noHistory").classList.add("hidden");
+
+            fetch(API_HISTORY_URL, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": "Bearer " + sessionStorage.getItem('kpi_token')
+                },
+                body: JSON.stringify({ userId: email })
+            })
+            .then(r => {
+                if (!r.ok) throw new Error(`HTTP ${r.status}: ${r.statusText}`);
+                return r.json();
+            })
+            .then(apiRes => {
+                let items = [];
+                if (Array.isArray(apiRes)) {
+                    items = apiRes;
+                } else if (apiRes.body) {
+                    try {
+                        items = typeof apiRes.body === 'string' ? JSON.parse(apiRes.body) : apiRes.body;
+                        if (!Array.isArray(items)) items = [];
+                    } catch (e) {
+                        console.error('Failed to parse response body:', e);
+                        items = [];
+                    }
+                }
+
+                // Sort newest first
+                items.sort((a, b) => {
+                    const parseWeek = w => {
+                        const m = w.match(/^(\d+)-W(\d+)$/);
+                        return m ? [parseInt(m[1]), parseInt(m[2])] : [0,0];
+                    };
+                    const [yA, wA] = parseWeek(a.week||'');
+                    const [yB, wB] = parseWeek(b.week||'');
+                    if (yA !== yB) return yB-yA;
+                    return wB-wA;
+                });
+
+                currentHistoryData = items;
+                document.getElementById("historyLoading").classList.add("hidden");
+
+                if (items.length > 0) {
+                    renderHistoryTable(items);
+                    document.getElementById("historyContent").classList.remove("hidden");
+                } else {
+                    document.getElementById("noHistory").classList.remove("hidden");
+                }
+            })
+            .catch(err => {
+                console.error('History fetch error:', err);
+                document.getElementById("historyLoading").innerHTML =
+                    '<i class="fas fa-exclamation-triangle"></i> Failed to load history. Please check your connection and try again.';
+            });
+        }
+
+        function renderHistoryTable(items) {
+            const tbody = document.getElementById("historyTbody");
+            tbody.innerHTML = items.map(item => {
+                const statusHtml = getStatusBadge(item.resultComparison);
+                return `
+                    <tr>
+                        <td><strong>${item.week||''}</strong></td>
+                        <td>${item.goalDescription||''}</td>
+                        <td><strong>${item.goal!=null?item.goal:''}</strong></td>
+                        <td><strong>${item.targetPercent!=null?item.targetPercent:''}</strong></td>
+                        <td>${statusHtml}</td>
+                    </tr>`;
+            }).join('');
+        }
+
+        function getStatusBadge(res) {
+            if (res === "Achieved") return '<span class="status-badge achieved"><i class="fas fa-check"></i> Achieved</span>';
+            if (res === "Below Goal") return '<span class="status-badge below"><i class="fas fa-times"></i> Below Goal</span>';
+            return '<span class="status-badge" style="background:#f3f4f6;color:#6b7280;"><i class="fas fa-clock"></i> Pending</span>';
+        }
+
+        // Update stats
+        function updateStats() {
+            const email = sessionStorage.getItem('kpi_email');
+            fetch(API_HISTORY_URL, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": "Bearer " + sessionStorage.getItem('kpi_token')
+                },
+                body: JSON.stringify({ userId: email })
+            })
+            .then(r => {
+                if (!r.ok) throw new Error(`HTTP ${r.status}: ${r.statusText}`);
+                return r.json();
+            })
+            .then(apiRes => {
+                let items = Array.isArray(apiRes) ? apiRes
+                    : (apiRes.body && (typeof apiRes.body==='string'?JSON.parse(apiRes.body):apiRes.body))||[];
+                currentHistoryData = items;
+                const total = items.length;
+                const achieved = items.filter(i=>i.resultComparison==="Achieved").length;
+                const rate = total>0?Math.round(achieved/total*100):0;
+                // trend
+                const recent = items.slice(0,4), old=items.slice(4,8);
+                const rSucc = recent.length?recent.filter(i=>i.resultComparison==="Achieved").length/recent.length*100:0;
+                const oSucc = old.length?old.filter(i=>i.resultComparison==="Achieved").length/old.length*100:0;
+                let trend="→";
+                if(rSucc>oSucc+5) trend="↗️"; else if(rSucc<oSucc-5) trend="↘️";
+                document.getElementById("totalGoals").textContent=total;
+                document.getElementById("achievedGoals").textContent=achieved;
+                document.getElementById("successRate").textContent=rate+"%";
+                document.getElementById("weeklyTrend").textContent=trend;
+            })
+            .catch(err=>console.error('Stats update error:',err));
+        }
+
+        // Analytics
+        function loadAnalytics(){
+            setTimeout(()=>{
+                updateAnalyticsStats();
+                generateCharts();
+                generateInsights();
+            },500);
+        }
+
+        function updateAnalyticsStats(){
+            if(!currentHistoryData.length){ fetchHistoryForAnalytics(); return; }
+            const items=currentHistoryData;
+            const lastMonth=items.slice(0,4);
+            const monthly=lastMonth.length?Math.round(lastMonth.filter(i=>i.resultComparison==="Achieved").length/lastMonth.length*100):0;
+            const bestMonth=items.length>4?"March 2025":"Current";
+            const avg=items.length?Math.round(items.reduce((sum,i)=>sum+(i.goal||0),0)/items.length):0;
+            document.getElementById("monthlySuccess").textContent=monthly+"%";
+            document.getElementById("bestMonth").textContent=bestMonth;
+            document.getElementById("avgTarget").textContent=avg;
+        }
+
+        function fetchHistoryForAnalytics(){
+            const email=sessionStorage.getItem('kpi_email');
+            fetch(API_HISTORY_URL,{
+                method:"POST",headers:{
+                    "Content-Type":"application/json",
+                    "Authorization":"Bearer "+sessionStorage.getItem('kpi_token')
+                },
+                body:JSON.stringify({userId:email})
+            })
+            .then(r=>r.json())
+            .then(apiRes=>{
+                let items=Array.isArray(apiRes)?apiRes
+                    : (apiRes.body && (typeof apiRes.body==='string'?JSON.parse(apiRes.body):apiRes.body))||[];
+                currentHistoryData=items;
+                updateAnalyticsStats();
+                generateCharts();
+                generateInsights();
+            })
+            .catch(err=>console.error('Analytics data fetch error:',err));
+        }
+
+        function generateCharts(){
+            const items=currentHistoryData.slice(0,8);
+            if(!items.length) return;
+            // Trend
+            const ctx1=document.getElementById('performanceChart').getContext('2d');
+            new Chart(ctx1,{type:'line',data:{
+                labels:items.slice().reverse().map(i=>i.week),
+                datasets:[{
+                    label:'Achievement Rate',
+                    data:items.map(i=>i.targetPercent&&i.goal?Math.round(i.targetPercent/i.goal*100):0),
+                    tension:0.4
+                }]
+            },options:{responsive:true,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,max:120,ticks:{callback:v=>v+'%'}}}}});
+            // Categories
+            const ctx2=document.getElementById('categoriesChart').getContext('2d');
+            const cat={};
+            items.forEach(i=>{
+                const c=i.goalDescription.split(' ')[0]||'Other';
+                cat[c]=(cat[c]||0)+1;
+            });
+            new Chart(ctx2,{type:'doughnut',data:{
+                labels:Object.keys(cat),
+                datasets:[{data:Object.values(cat)}]
+            },options:{responsive:true,plugins:{legend:{position:'bottom'}}}});
+            // Success bar
+            const ctx3=document.getElementById('successChart').getContext('2d');
+            new Chart(ctx3,{type:'bar',data:{
+                labels:items.map(i=>i.week),
+                datasets:[{
+                    label:'Success',
+                    data:items.map(i=>i.resultComparison==='Achieved'?1:0)
+                }]
+            },options:{responsive:true,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,max:1,ticks:{callback:v=>v?'Success':'Failed'}}}}});
+            // Comparison
+            const ctx4=document.getElementById('comparisonChart').getContext('2d');
+            new Chart(ctx4,{type:'bar',data:{
+                labels:items.map(i=>i.week),
+                datasets:[
+                    {label:'Target',data:items.map(i=>i.goal||0)},
+                    {label:'Achieved',data:items.map(i=>i.targetPercent||0)}
+                ]
+            },options:{responsive:true,scales:{y:{beginAtZero:true}}}});
+        }
+
+        function generateInsights(){
+            const items=currentHistoryData;
+            const ins=document.getElementById('performanceInsights');
+            if(!items.length){ ins.innerHTML='<p>Start setting goals to see performance insights!</p>'; return; }
+            const achieved=items.filter(i=>i.resultComparison==='Achieved').length;
+            const rate=Math.round(achieved/items.length*100);
+            let html='<div class="insight-card">';
+            html+=`<h5>🎯 Overall Performance</h5><p>You've achieved ${achieved} out of ${items.length} goals (${rate}% success rate). `;
+            html+= rate>=80?'Excellent work! You\'re consistently hitting your targets.</p>'
+                  : rate>=60?'Good progress! Consider adjusting your targets or strategies for better results.</p>'
+                  :'There\'s room for improvement. Try setting more realistic goals or breaking them into smaller steps.</p>';
+            html+='</div>';
+            const recent=items.slice(0,4);
+            const recSuc=recent.filter(i=>i.resultComparison==='Achieved').length;
+            html+='<div class="insight-card">';
+            html+='<h5>📈 Recent Trend</h5>';
+            html+=`<p>In your last 4 weeks, you achieved ${recSuc} goals. `;
+            html+= recSuc>=3?'You\'re on a great streak! Keep up the momentum.</p>'
+                  : recSuc>=2?'Steady progress. Consider what worked well in your successful weeks.</p>'
+                  :'Recent performance shows challenges. Review your goal-setting strategy.</p>';
+            html+='</div>';
+            ins.innerHTML=html;
+        }
+
+        // AI Coach
+        function loadAICoach(){
+            setTimeout(()=>{
+                generatePsychologicalAnalysis();
+                generatePersonalizedRecommendations();
+                generateActionPlan();
+                generateMotivationAlignment();
+            },1000);
+        }
+
+        function generatePsychologicalAnalysis(){
+            const container=document.getElementById('psychologicalAnalysis');
+            const items=currentHistoryData;
+            if(!items.length){ container.innerHTML='<p>Start tracking goals to unlock psychological insights!</p>'; return; }
+            const achieved=items.filter(i=>i.resultComparison==='Achieved').length;
+            const rate=achieved/items.length;
+            let analysis='<div class="insight-card"><h5>🧠 Goal Setting Psychology</h5>';
+            if(rate>0.8){
+                analysis+='<p><strong>Achiever Personality:</strong> You demonstrate strong self-discipline and realistic goal-setting. Your high success rate indicates excellent self-awareness and planning abilities.</p>';
+            } else if(rate>0.6){
+                analysis+='<p><strong>Balanced Achiever:</strong> You set challenging goals and achieve them at a good rate. You may benefit from slightly adjusting your target difficulty or improving consistency strategies.</p>';
+            } else if(rate>0.4){
+                analysis+='<p><strong>Ambitious Dreamer:</strong> You tend to set challenging goals, which shows great ambition. Your pattern suggests you might benefit from breaking larger goals into smaller, more achievable steps.</p>';
+            } else {
+                analysis+='<p><strong>Optimistic Planner:</strong> You have high aspirations, which is excellent for long-term growth. Consider adjusting your approach to build momentum with some easier wins first.</p>';
+            }
+            analysis+='</div>';
+            const consistency=calculateConsistency(items);
+            analysis+='<div class="insight-card"><h5>🔄 Consistency Analysis</h5>';
+            analysis+=`<p><strong>Consistency Score:</strong> ${Math.round(consistency*100)}%</p>`;
+            if(consistency>0.7){
+                analysis+='<p>You show excellent consistency in goal tracking. This habit formation strength is a key predictor of long-term success.</p>';
+            } else {
+                analysis+='<p>Building more consistent tracking habits could significantly improve your success rate. Consider setting up reminders or smaller, daily goals.</p>';
+            }
+            analysis+='</div>';
+            container.innerHTML=analysis;
+        }
+
+        function generatePersonalizedRecommendations(){
+            const container=document.getElementById('personalizedRecommendations');
+            const items=currentHistoryData;
+            if(!items.length){ container.innerHTML='<p>Complete a few goal cycles to receive personalized recommendations!</p>'; return; }
+            const recs=[];
+            const rate=items.filter(i=>i.resultComparison==='Achieved').length/items.length;
+            const avg=items.reduce((sum,i)=>sum+(i.goal||0),0)/items.length;
+            if(avg>15){
+                recs.push({icon:'fas fa-cut',title:'Break Down Large Goals',description:'Your average target is quite high. Consider breaking larger goals into smaller, weekly milestones for better success rates.'});
+            }
+            if(rate<0.5){
+                recs.push({icon:'fas fa-target',title:'Adjust Target Difficulty',description:'Start with targets 20-30% lower than your usual. Building momentum with achievable goals increases motivation and long-term success.'});
+            }
+            recs.push({icon:'fas fa-calendar-check',title:'Weekly Planning Ritual',description:'Set aside 15 minutes every Sunday to plan your week and review your previous performance. This reflection improves self-awareness.'});
+            recs.push({icon:'fas fa-users',title:'Accountability Partner',description:'Share your goals with a friend or colleague. Social accountability can increase your success rate by up to 65%.'});
+            recs.push({icon:'fas fa-gift',title:'Reward System',description:'Create small rewards for achieving your weekly goals. Positive reinforcement strengthens the habit loop and increases motivation.'});
+            let html='<ul class="recommendation-list">';
+            recs.forEach(r=>{
+                html+=`<li><i class="${r.icon}"></i><div><strong>${r.title}:</strong> ${r.description}</div></li>`;
+            });
+            html+='</ul>';
+            container.innerHTML=html;
+        }
+
+        function generateActionPlan(){
+            const container=document.getElementById('actionPlan');
+            const items=currentHistoryData;
+            let plan='<div class="insight-card"><h5>📋 Your Personalized Success Roadmap</h5>';
+            if(!items.length){
+                plan+='<p><strong>Week 1-2:</strong> Start with 3 small, easily achievable goals to build momentum.<br>';
+                plan+='<strong>Week 3-4:</strong> Gradually increase difficulty while maintaining consistency.<br>';
+                plan+='<strong>Week 5+:</strong> Establish your optimal challenge level based on early results.</p>';
+            } else {
+                const rate=items.filter(i=>i.resultComparison==='Achieved').length/items.length;
+                plan+='<p><strong>Immediate Actions (This Week):</strong><br>';
+                if(rate<0.6){
+                    plan+='• Reduce your target by 25% to build confidence<br>';
+                    plan+='• Focus on just one goal this week<br>';
+                } else {
+                    plan+='• Maintain your current target level<br>';
+                    plan+='• Add a habit-tracking element to your goal<br>';
+                }
+                plan+='<br><strong>Medium-term Strategy (Next 4 weeks):</strong><br>';
+                plan+='• Implement weekly review sessions every Sunday<br>';
+                plan+='• Start a simple goal journal or notes<br>';
+                plan+='• Identify your peak performance days and plan accordingly<br>';
+                plan+='<br><strong>Long-term Vision (Next 3 months):</strong><br>';
+                plan+='• Connect your weekly goals to bigger life objectives<br>';
+                plan+='• Develop expertise in your chosen goal areas<br>';
+                plan+='• Consider mentoring others to strengthen your own habits</p>';
+            }
+            plan+='</div>';
+            container.innerHTML=plan;
+        }
+
+        function generateMotivationAlignment(){
+            const container=document.getElementById('motivationAlignment');
+            const items=currentHistoryData;
+            let motivation='<div class="insight-card"><h5>🚀 Connecting Daily Actions to Life Vision</h5>';
+            const cats={};
+            items.forEach(i=>{
+                const d=i.goalDescription.toLowerCase();
+                if(d.includes('read')||d.includes('learn')||d.includes('study')){
+                    cats['Learning & Growth']=(cats['Learning & Growth']||0)+1;
+                } else if(d.includes('exercise')||d.includes('run')||d.includes('fitness')){
+                    cats['Health & Wellness']=(cats['Health & Wellness']||0)+1;
+                } else if(d.includes('work')||d.includes('project')||d.includes('business')){
+                    cats['Career & Professional']=(cats['Career & Professional']||0)+1;
+                } else {
+                    cats['Personal Development']=(cats['Personal Development']||0)+1;
+                }
+            });
+            if(Object.keys(cats).length){
+                const top=Object.keys(cats).reduce((a,b)=>cats[a]>cats[b]?a:b);
+                motivation+=`<p><strong>Your Core Value Focus:</strong> ${top}</p>`;
+                motivation+='<p>Your goals show you value ';
+                switch(top){
+                    case 'Learning & Growth':
+                        motivation+='continuous learning and intellectual development. This suggests you\'re building toward expertise and wisdom in your field.';
+                        break;
+                    case 'Health & Wellness':
+                        motivation+='physical health and well-being. You understand that a strong body supports all other life goals.';
+                        break;
+                    case 'Career & Professional':
+                        motivation+='professional excellence and career advancement. Your daily efforts are investments in your professional future.';
+                        break;
+                    default:
+                        motivation+='personal growth and self-improvement. You\'re committed to becoming the best version of yourself.';
+                }
+                motivation+='</p>';
+            }
+            motivation+='<br><p><strong>Vision Connection Exercise:</strong><br>';
+            motivation+='Take 5 minutes to write down how your current weekly goals connect to where you want to be in 5 years. This mental link strengthens motivation during challenging weeks.</p>';
+            motivation+='<br><p><strong>Daily Motivation Booster:</strong><br>';
+            motivation+='Each morning, remind yourself: "This goal isn\'t just about this week - it\'s building the person I\'m becoming." Small daily actions compound into extraordinary long-term results.</p>';
+            motivation+='</div>';
+            container.innerHTML=motivation;
+        }
+
+        function calculateConsistency(items){
+            if(items.length<=1) return 1;
+            const total=items.length;
+            const expected=Math.max(total,4);
+            return Math.min(total/expected,1);
+        }
+
+        // Email Functions
+        function sendAdvancedEmail() {
+            const email = sessionStorage.getItem('kpi_email');
+            const containerMsg = document.getElementById("emailMsg");
+
+            if (!email) {
+                showMessage(containerMsg, "❌ No user email found. Please log in again.", "error");
+                return;
+            }
+
+            // تأكد من وجود بيانات التاريخ
+            if (currentHistoryData.length === 0) {
+                showMessage(containerMsg, "📊 Please load your KPI history first by visiting the History page!", "error");
+                return;
+            }
+
+            const mostRecentWeek = currentHistoryData[0]?.week;
+            if (!mostRecentWeek) {
+                showMessage(containerMsg, "📊 No recent data available to summarize.", "error");
+                return;
+            }
+
+            const btn = document.getElementById('sendEmailBtn');
+            const originalContent = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending Your Report...';
+
+            // بناء جسم الرسالة مع تضمين سجلّ التاريخ كاملاً
+            const emailData = {
+                userId: email,
+                recipientEmail: email,
+                week: mostRecentWeek,
+                history: currentHistoryData
+            };
+
+            fetch(API_CHECKNOTIFY_URL, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": "Bearer " + sessionStorage.getItem('kpi_token')
+                },
+                body: JSON.stringify(emailData)
+            })
+            .then(r => {
+                if (!r.ok) throw new Error(`HTTP ${r.status}: ${r.statusText}`);
+                return r.json();
+            })
+            .then(json => {
+                if (json.message) {
+                    showMessage(containerMsg, `✅ Report sent successfully to ${email}!`, "success");
+                } else if (json.error) {
+                    showMessage(containerMsg, "❌ " + json.error, "error");
+                } else {
+                    showMessage(containerMsg, `✅ Weekly report sent to ${email}!`, "success");
+                }
+            })
+            .catch(err => {
+                console.error('Email send error:', err);
+                let errorMessage = `❌ Failed to send email to ${email}. `;
+                if (err.message.includes('401') || err.message.includes('403')) {
+                    errorMessage += "Please log out and log back in (authentication issue).";
+                } else if (err.message.includes('500')) {
+                    errorMessage += "Server error; try again later.";
+                } else {
+                    errorMessage += err.message;
+                }
+                showMessage(containerMsg, errorMessage, "error");
+            })
+            .finally(() => {
+                btn.disabled = false;
+                btn.innerHTML = originalContent;
+            });
+        }
+
+        function loadEmailHistory() {
+            const container = document.getElementById('emailHistory');
+            container.innerHTML = '<p>Email history will be displayed after sending reports.</p>';
+        }
+
+        // Utility
+        function showMessage(container, text, type) {
+            const existing = container.querySelectorAll('.message');
+            existing.forEach(m => m.remove());
+            const msg = document.createElement('div');
+            msg.className = `message ${type}`;
+            const icon = type === 'success' ? 'fas fa-check-circle' : 'fas fa-exclamation-circle';
+            msg.innerHTML = `<i class="${icon}"></i> ${text}`;
+            container.appendChild(msg);
+            setTimeout(() => {
+                if (msg.parentNode) msg.remove();
+            }, 5000);
+        }
+
+        if (sessionStorage.getItem('kpi_token')) {
+            setTimeout(updateStats, 1000);
+        }
     </script>
 </body>
 </html>
-
