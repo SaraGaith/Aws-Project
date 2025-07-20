@@ -640,6 +640,31 @@
         .hidden {
             display: none !important;
         }
+
+        /* New styles for week selector */
+        .week-selector {
+            background: rgba(248,250,252,0.8);
+            border-radius: 12px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            border: 1px solid #e5e7eb;
+        }
+
+        .week-selector label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+            color: #1e293b;
+        }
+
+        .week-selector select {
+            width: 100%;
+            padding: 0.5rem;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            background: white;
+            color: #374151;
+        }
     </style>
 </head>
 <body>
@@ -928,16 +953,32 @@
             </div>
 
             <div class="card">
-                <h3><i class="fas fa-cog icon"></i> Email Report</h3>
+                <h3><i class="fas fa-cog icon"></i> Weekly Report Settings</h3>
+                
+                <!-- Week Selector -->
+                <div class="week-selector">
+                    <label for="emailWeekSelect"><i class="fas fa-calendar-week"></i> Select Week for Report:</label>
+                    <select id="emailWeekSelect">
+                        <!-- Options will be populated by JavaScript -->
+                    </select>
+                </div>
+
                 <div class="email-settings">
                     <div class="insight-card">
-                        <h5><i class="fas fa-envelope"></i> Send Weekly Report</h5>
-                        <p>Get your weekly KPI summary report sent directly to your email: <strong id="userEmailDisplay"></strong></p>
+                        <h5><i class="fas fa-envelope"></i> Send Detailed Weekly Report</h5>
+                        <p>Get a comprehensive summary of all your goals for the selected week sent to: <strong id="userEmailDisplay"></strong></p>
+                        <p><strong>Report includes:</strong></p>
+                        <ul style="margin-top: 0.5rem; padding-left: 1.5rem; color: #64748b;">
+                            <li>Complete list of all goals for the week</li>
+                            <li>Target vs Achievement comparison</li>
+                            <li>Success status for each goal</li>
+                            <li>Motivational insights and progress tracking</li>
+                        </ul>
                     </div>
                 </div>
 
                 <button class="submit-btn" id="sendEmailBtn" onclick="sendAdvancedEmail()">
-                    <i class="fas fa-paper-plane"></i> Send My Weekly Report Now
+                    <i class="fas fa-paper-plane"></i> Send Weekly Report
                 </button>
             </div>
 
@@ -1080,6 +1121,8 @@
             const userEmail = sessionStorage.getItem('kpi_email');
             document.getElementById('userEmailDisplay').textContent = userEmail;
 
+            // Load week options and email history
+            loadWeekOptions();
             loadEmailHistory();
         }
 
@@ -1219,7 +1262,7 @@
                 // Sort newest first
                 items.sort((a, b) => {
                     const parseWeek = w => {
-                        const m = w.match(/^(\d+)-W(\d+)$/);
+                        const m = w.match(/^(\d+)-W(\d+)/);
                         return m ? [parseInt(m[1]), parseInt(m[2])] : [0,0];
                     };
                     const [yA, wA] = parseWeek(a.week||'');
@@ -1300,6 +1343,65 @@
                 document.getElementById("weeklyTrend").textContent=trend;
             })
             .catch(err=>console.error('Stats update error:',err));
+        }
+
+        // Week Options Loader
+        function loadWeekOptions() {
+            const select = document.getElementById('emailWeekSelect');
+            
+            // Get unique weeks from history data
+            if (currentHistoryData.length === 0) {
+                // Load history first if not available
+                fetchHistoryForEmailOptions();
+                return;
+            }
+
+            // Extract unique week prefixes
+            const weeks = [...new Set(currentHistoryData.map(item => {
+                const weekStr = item.week || '';
+                return weekStr.split('.')[0]; // Get prefix before the dot
+            }))].filter(w => w).sort((a, b) => {
+                const parseWeek = w => {
+                    const m = w.match(/^(\d+)-W(\d+)$/);
+                    return m ? [parseInt(m[1]), parseInt(m[2])] : [0,0];
+                };
+                const [yA, wA] = parseWeek(a);
+                const [yB, wB] = parseWeek(b);
+                if (yA !== yB) return yB-yA; // Newer years first
+                return wB-wA; // Newer weeks first
+            });
+
+            select.innerHTML = weeks.map(week => 
+                `<option value="${week}">${week}</option>`
+            ).join('');
+
+            if (weeks.length === 0) {
+                select.innerHTML = '<option value="">No weeks available</option>';
+            }
+        }
+
+        function fetchHistoryForEmailOptions() {
+            const email = sessionStorage.getItem('kpi_email');
+            fetch(API_HISTORY_URL, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": "Bearer " + sessionStorage.getItem('kpi_token')
+                },
+                body: JSON.stringify({ userId: email })
+            })
+            .then(r => r.json())
+            .then(apiRes => {
+                let items = Array.isArray(apiRes) ? apiRes
+                    : (apiRes.body && (typeof apiRes.body==='string'?JSON.parse(apiRes.body):apiRes.body))||[];
+                currentHistoryData = items;
+                loadWeekOptions();
+            })
+            .catch(err => {
+                console.error('Failed to load history for email options:', err);
+                const select = document.getElementById('emailWeekSelect');
+                select.innerHTML = '<option value="">Error loading weeks</option>';
+            });
         }
 
         // Analytics
@@ -1557,25 +1659,25 @@
             return Math.min(total/expected,1);
         }
 
-        // Email Functions
+        // Email Functions - UPDATED WITH NEW LOGIC
         function sendAdvancedEmail() {
             const email = sessionStorage.getItem('kpi_email');
             const containerMsg = document.getElementById("emailMsg");
+            const selectedWeek = document.getElementById('emailWeekSelect').value;
 
             if (!email) {
                 showMessage(containerMsg, "❌ No user email found. Please log in again.", "error");
                 return;
             }
 
-            // تأكد من وجود بيانات التاريخ
-            if (currentHistoryData.length === 0) {
-                showMessage(containerMsg, "📊 Please load your KPI history first by visiting the History page!", "error");
+            if (!selectedWeek) {
+                showMessage(containerMsg, "📅 Please select a week to send report for.", "error");
                 return;
             }
 
-            const mostRecentWeek = currentHistoryData[0]?.week;
-            if (!mostRecentWeek) {
-                showMessage(containerMsg, "📊 No recent data available to summarize.", "error");
+            // Ensure history data is available
+            if (currentHistoryData.length === 0) {
+                showMessage(containerMsg, "📊 Please load your KPI history first by visiting the History page!", "error");
                 return;
             }
 
@@ -1584,12 +1686,10 @@
             btn.disabled = true;
             btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending Your Report...';
 
-            // بناء جسم الرسالة مع تضمين سجلّ التاريخ كاملاً
+            // Prepare email data for the new Lambda function
             const emailData = {
                 userId: email,
-                recipientEmail: email,
-                week: mostRecentWeek,
-                history: currentHistoryData
+                week: selectedWeek + ".1" // Add .1 to match the Lambda function's expected format
             };
 
             fetch(API_CHECKNOTIFY_URL, {
@@ -1606,20 +1706,22 @@
             })
             .then(json => {
                 if (json.message) {
-                    showMessage(containerMsg, `✅ Report sent successfully to ${email}!`, "success");
+                    showMessage(containerMsg, `✅ ${json.message} Report sent to ${email} for week ${selectedWeek}!`, "success");
                 } else if (json.error) {
                     showMessage(containerMsg, "❌ " + json.error, "error");
                 } else {
-                    showMessage(containerMsg, `✅ Weekly report sent to ${email}!`, "success");
+                    showMessage(containerMsg, `✅ Weekly report sent to ${email} for week ${selectedWeek}!`, "success");
                 }
             })
             .catch(err => {
                 console.error('Email send error:', err);
-                let errorMessage = `❌ Failed to send email to ${email}. `;
+                let errorMessage = `❌ Failed to send email report. `;
                 if (err.message.includes('401') || err.message.includes('403')) {
                     errorMessage += "Please log out and log back in (authentication issue).";
                 } else if (err.message.includes('500')) {
                     errorMessage += "Server error; try again later.";
+                } else if (err.message.includes('404')) {
+                    errorMessage += "No goals found for the selected week.";
                 } else {
                     errorMessage += err.message;
                 }
@@ -1633,7 +1735,21 @@
 
         function loadEmailHistory() {
             const container = document.getElementById('emailHistory');
-            container.innerHTML = '<p>Email history will be displayed after sending reports.</p>';
+            container.innerHTML = `
+                <div class="insight-card">
+                    <h5><i class="fas fa-info-circle"></i> Email Report System</h5>
+                    <p>The new email system sends detailed weekly summaries containing:</p>
+                    <ul style="margin-top: 0.5rem; padding-left: 1.5rem; color: #64748b;">
+                        <li>All goals for the selected week with descriptions</li>
+                        <li>Target vs achieved comparison for each goal</li>
+                        <li>Success status indicators (✅/❌)</li>
+                        <li>Motivational closing message</li>
+                    </ul>
+                    <p style="margin-top: 1rem; font-style: italic; color: #8b5cf6;">
+                        Select a week above and click "Send Weekly Report" to receive your detailed summary!
+                    </p>
+                </div>
+            `;
         }
 
         // Utility
@@ -1656,3 +1772,4 @@
     </script>
 </body>
 </html>
+
